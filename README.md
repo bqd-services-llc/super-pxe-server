@@ -1,165 +1,194 @@
-# Super PXE Server
+![Super PXE Banner](assets/banner.png)
 
- <img width="3168" height="1344" alt="banner" src="https://github.com/user-attachments/assets/d867580f-8a88-4792-aa7c-afdefa786b30" />
+# <img src="assets/icon.png" width="48" height="48" align="center"/> Super PXE Server (Next-Gen)
 
-**Drop. Boot. Done.**
+**The Ultimate Network Boot Solution**
 
-**Copyright © 2026 BQD Services LLC. All Rights Reserved.**
+**Copyright © 2026 BQD Services. All Rights Reserved.**
+**Version: v2.0 (Next-Gen)**
 
 ## Overview
-Super PXE Server (SPS) is an advanced, automated network boot appliance designed to unify the best features of tools like **iVentoy** and **Enterprise Diskless Solutions**.
+
+Super PXE Server is an advanced, automated network boot appliance designed to unify the best features of tools like **iVentoy**, **Netboot.xyz**, and **Enterprise Diskless Solutions**.
 
 It provides a "Drop-and-Boot" experience: simply place an ISO, VHD, or Disk Image into a folder, and the server automatically:
 1.  **Detects** the file.
 2.  **Generates** the necessary backend configuration (iSCSI targets, NFS exports).
 3.  **Updates** the dynamic iPXE boot menu.
-4.  **Handles** complex logic like **Secure Boot** chaining and **Copy-on-Write Snapshots**.
+4.  **Handles** complex logic like **Secure Boot** chaining and **Copy-on-Write Snapshots** for multiple clients.
+
+---
+
+## Licensing & Editions
+
+Super PXE Server operates on a **Freemium Proprietary** model.
+
+### 60-Day Full Trial
+Every installation includes a **60-Day Enterprise Trial** enabled by default. This unlocks all features, including unlimited diskless workstations and automated injection.
+
+### Community Edition (Free Forever)
+After the trial expires, the server reverts to Community Edition:
+*   **Unlimited ISO Booting:** Boot as many installers or live tools as you need.
+*   **Unlimited Read-Only VHDs:** Boot generic images on unlimited clients.
+*   **Single Diskless Node:** You may maintain **one (1)** active "Persistent Overlay" client. Perfect for a personal workstation or homelab testing.
+*   **No Auto-Injection:** Kickstart/Preseed injection is disabled.
+
+### Enterprise Edition
+Upgrading to Enterprise unlocks:
+*   **Unlimited Persistent Workstations:** Deploy entire labs with individual persistence.
+*   **Automated Injection:** Zero-touch OS installation via Kickstart/Preseed.
+*   **Priority Support:** Direct email support from BQD Services.
 
 ---
 
 ## Key Capabilities
 
-### 1. Web Admin Interface (New in v1.37)
-* **Visual Dashboard:** Manage your server from any browser.
-* **Asset Detection:** Automatically scans and lists detected ISOs and VHDs.
-* **Safe Configuration:** "Advanced Mode" prevents accidental network misconfigurations (DHCP/IP settings).
+### 1. Zero-Config Booting
+*   **ISOs:** Drop Linux or Windows installers into `/storage/isos`.
+    *   **Windows:** Uses `wimboot` for native, high-speed HTTP booting.
+    *   **Linux (Ubuntu/Debian):** Uses Kernel Extraction for instant booting.
+    *   **Legacy/Other:** Falls back to `memdisk` for maximum compatibility.
+*   **VHDs / Virtual Disks:** Drop `.vhd`, `.qcow2`, or `.img` files into `/storage/vhds`. The server automatically maps them as iSCSI targets.
 
+### 2. True Diskless Workstation Engine (New in v2.0!)
+*   **Golden Image Support:** Run an entire lab (e.g., 50+ PCs) from a single "Master" OS image.
+*   **Automatic Copy-on-Write (COW) Overlays:** When a client configured for "Overlay" boots a Master image, the server automatically creates a **private QCOW2 overlay** for that specific MAC address.
+*   **Individual Persistence:** Changes made by the client are saved to their private overlay (`/storage/overlays/`), keeping the Master image pristine.
 
-https://github.com/user-attachments/assets/2b0a6516-1098-4a1b-8604-cc5692299a34
-
-
-### 2. Zero-Config Booting
-* **ISOs:** Drop Linux or Windows installers into `/storage/isos`.
-    * **Windows:** Uses `wimboot` for native, high-speed HTTP booting.
-    * **Linux (Ubuntu/Debian):** Uses Kernel Extraction for instant booting.
-    * **Legacy/Other:** Falls back to `memdisk`.
-* **VHDs:** Drop `.vhd` or `.qcow2` files into `/storage/vhds` to automatically map them as iSCSI targets.
-
-### 3. Diskless Workstation Engine
-* **Golden Image Support:** Run an entire lab (e.g., 50+ PCs) from a single "Master" OS image.
-* **Automatic Snapshots:** When a client boots a Master image, the server automatically creates a **Copy-on-Write (CoW)** snapshot for that specific client.
-* **Individual Persistence:** Each diskless client gets its own persistent overlay, preserving user data while keeping the Master image pristine.
+### 3. Advanced Auto-Installation & Injection (New in v2.0!)
+*   **Injection Support:** Upload `kickstart.cfg`, `preseed.cfg`, or `unattend.xml` files via the Web UI.
+*   **Zero-Touch Deployment:** Assign injection files to specific clients. The server automatically patches the boot arguments (e.g., `inst.ks=http://...` or `autoinstall`) to trigger a fully automated installation.
+*   **Custom Kernel Arguments:** Pass specific boot parameters (e.g., `quiet splash`, `console=ttyS0`) per client.
 
 ### 4. Enterprise-Grade Security
-* **Secure Boot Compatible:** Includes a pre-configured boot chain using a Microsoft-Signed Shim (`shim.efi`).
-* **Client Isolation:** The iSCSI backend restricts target access by IP.
+*   **Secure Boot Compatible:** Includes a pre-configured boot chain using a Microsoft-Signed Shim (`shim.efi`) loading a signed iPXE binary.
+*   **Client Isolation:** The iSCSI backend restricts target access by IP/Initiator, ensuring Client A cannot corrupt Client B's disk overlay.
+*   **Dynamic iSCSI Targeting:** Automatically generates Read-Only targets for installers and Read-Write targets for diskless clients.
 
 ---
 
-## Compatibility Matrix
+## Web Interface (v2.0)
 
-**Current v1.0 Support Status:**
+A modern, "Shield of Speed" themed Admin Console allows you to manage the entire ecosystem without touching a command line.
 
-| OS Type | Boot Method | Status | Notes |
-| :--- | :--- | :--- | :--- |
-| **Windows 10 / 11** | `wimboot` | ✅ **Native** | Fast load. Works with Secure Boot. |
-| **Ubuntu 20.04+** | Kernel Extraction | ✅ **Native** | Supports `casper` boot arguments. |
-| **Debian / Mint** | Kernel Extraction | ✅ **Native** | Automatic detection. |
-| **Fedora / RHEL** | `memdisk` | ⚠️ **Experimental** | Requires loading full ISO to RAM. Client needs 4GB+ RAM. |
-| **Arch / Other** | `memdisk` | ⚠️ **Experimental** | May fail on older BIOS/Hardware. |
+**Access:** Open `http://<Your-Server-IP>:8000`
+
+### Features
+*   **Dashboard:** Real-time view of active sessions (iSCSI/NFS) and system health.
+*   **Asset Management:** Browse and search ISOs, VHDs, and Injection files.
+    *   **New:** Upload Kickstart/Preseed files directly from the browser.
+*   **Client Management:** 
+    *   Map specific MAC addresses to specific Images (ISO or VHD).
+    *   **Enable Persistent Overlay:** Toggle for VHDs to create private storage.
+    *   **Attach Injection:** Select a configuration file for auto-install.
+    *   **Set Hostname:** Track client identity.
 
 ---
 
 ## Installation
 
+The provided `install_super_pxe.sh` is a comprehensive, single-file installer.
+
 **Prerequisites:**
-* **OS:** Ubuntu 22.04 LTS or 24.04 LTS (Fresh Install Recommended).
-* **Network:** Wired Ethernet connection with a Static IP is highly recommended.
+*   **OS:** Ubuntu 22.04 LTS or 24.04 LTS (Fresh Install Recommended).
+*   **Network:** Wired Ethernet connection with a Static IP is highly recommended.
 
-### Method 1: Debian Package (Recommended)
-This is the cleanest installation method. It handles all dependencies (Nginx, Python, TGT, etc.) automatically.
-
-1.  **Download the latest package:**
-    ```bash
-    wget https://github.com/bqd-services-llc/super-pxe-server/releases/download/v1.37/super-pxe-server_1.37_amd64.deb
-    ```
-
-2.  **Install via apt:**
-    ```bash
-    sudo apt install ./super-pxe-server_1.37_amd64.deb
-    ```
-
-3.  **Access the Dashboard:**
-    Open your browser and navigate to: `http://<your-server-ip>:8000`
-
-### Method 2: Docker Container
-Ideal for testing or containerized labs.
-*Note: Requires `--network host` to handle DHCP/TFTP broadcast traffic.*
-
+**How to Install:**
 ```bash
-docker run -d \
-  --name super-pxe \
-  --network host \
-  --restart always \
-  -v /opt/super-pxe/storage:/opt/super-pxe-server/storage \
-  ghcr.io/bqdservices/super-pxe-server:latest
+# 1. Download the installer
+wget https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh
 
+# 2. Make executable
+chmod +x install_super_pxe.sh
+
+# 3. Run as Root
+sudo ./install_super_pxe.sh
 ```
 
-### Method 3: Manual Script
+> **Note:** Rerunning the installer on an existing system will **preserve** your `config.json` and assets.
 
-If you cannot use the .deb package or Docker, you can use the raw installer script:
+---
 
+## Docker Deployment (Portable)
+
+You can run Super PXE Server on any OS (Linux, Windows, macOS) using Docker.
+
+**Prerequisites:** Docker & Docker Compose installed.
+
+**1. Create a `docker-compose.yml`:**
+```yaml
+version: '3.8'
+services:
+  super-pxe:
+    image: bqdservices/super-pxe-server:latest # Or build locally
+    container_name: super-pxe
+    privileged: true  # REQUIRED for iSCSI/TGT
+    network_mode: "host" # REQUIRED for PXE/TFTP
+    environment:
+      - SERVER_IP=192.168.1.100 # Replace with your Host IP
+    volumes:
+      - ./runtime/storage:/opt/super-pxe-server/storage
+    restart: unless-stopped
+```
+
+**2. Start the Server:**
 ```bash
-wget [https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh](https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh)
-chmod +x install_super_pxe.sh
-sudo ./install_super_pxe.sh
-
+docker-compose up -d
 ```
 
 ---
 
-## 🔧 Beta Program Tools
+## Usage Guide
 
-If you are participating in the **Smoke Test** or **Beta Program**, please install the additional diagnostics toolkit. This provides log collection and debug utilities.
+### 1. Adding Boot Images
+*   **Installers (ISOs):** Copy to `/opt/super-pxe-server/storage/isos/`
+*   **Virtual Disks (VHDs):** Copy to `/opt/super-pxe-server/storage/vhds/`
 
-1. **Install the Beta Tools:**
-```bash
-wget [https://github.com/YourRepo/releases/download/v1.37/super-pxe-beta-tools_1.37_all.deb](https://github.com/YourRepo/releases/download/v1.37/super-pxe-beta-tools_1.37_all.deb)
-sudo apt install ./super-pxe-beta-tools_1.37_all.deb
+### 2. DHCP Configuration (Critical)
+Configure your existing DHCP Server (Router, Windows Server, etc.) to point clients to this server.
 
-```
+*   **Next-Server (Option 66):** `<IP_Address_of_This_Server>`
+*   **Boot Filename (Option 67):**
+    *   **UEFI Clients:** `shim.efi` (Recommended)
+    *   **Legacy BIOS:** `undionly.kpxe`
 
-
-2. **Usage:**
-This package adds the `sps-debug` command to your system.
-```bash
-# Generate a bug report archive
-sudo sps-debug --collect
-
-# View live server logs
-sudo sps-debug --logs
-
-```
-
-
+### 3. Monitoring & Logs
+*   **Check Brain Service:** `journalctl -u super-pxe-brain -f`
+*   **View Active iSCSI Targets:** `tgt-admin --show`
 
 ---
 
 ## Troubleshooting
 
 **Problem: "Exec format error" when booting ISOs**
-
-* **Cause:** The `memdisk` binary is corrupted or empty.
-* **Fix:** Re-install the package to restore the binary.
+*   **Fix:** Re-run the installer or manually extract `memdisk` from syslinux.
 
 **Problem: Windows Setup can't see the hard drive**
+*   **Fix:** Ensure your ISO has VirtIO drivers if running in a VM, or inject them into `boot.wim`.
 
-* **Cause:** The Windows ISO is missing VirtIO or Network drivers.
-* **Fix:** You may need to inject drivers into your `boot.wim`.
-
-**Problem: Client hangs at "Loading RAMDISK..."**
-
-* **Cause:** You are booting a large ISO via `memdisk` on a machine with insufficient RAM.
-* **Fix:** Add more RAM to the client or use a supported distro (Ubuntu/Windows).
+**Problem: Diskless Client boots to Read-Only Master**
+*   **Fix:** Ensure you have added the client in the Web UI and checked "Enable Persistent Overlay".
 
 ---
 
 ## License
 
-**Proprietary / Closed Source (During Beta)**
-The core orchestration logic ("The Brain"), installer script, and architectural designs are the intellectual property of **BQD Services LLC**. Unauthorized reproduction, distribution, or reverse engineering is strictly prohibited.
 
-```
 
-```
+**Proprietary / Freemium**
+
+
+
+**Super PXE Server** is proprietary software developed by **BQD Services**.
+
+
+
+*   **Community Use:** Free for personal and limited commercial use (subject to Community Edition feature limits).
+
+*   **Enterprise Use:** Requires a paid subscription for full feature access beyond the trial period.
+
+*   **Redistribution:** You may not redistribute modified versions of this software without express written permission.
+
+
+
+The core orchestration logic ("The Brain"), installer script, and architectural designs are the intellectual property of **BQD Services**.

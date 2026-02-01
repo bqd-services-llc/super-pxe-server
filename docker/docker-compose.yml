@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  super-pxe:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: super-pxe-server:latest
+    container_name: super-pxe
+    privileged: true  # Required for iSCSI (tgt) to interact with kernel
+    network_mode: "host" # Recommended for PXE/DHCP/TFTP to avoid NAT issues
+    environment:
+      - SERVER_IP=192.168.1.100 # Change to your Host IP
+    volumes:
+      - ../runtime/storage:/opt/super-pxe-server/storage
+    restart: unless-stopped

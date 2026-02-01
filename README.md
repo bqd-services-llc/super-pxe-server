@@ -1,6 +1,5 @@
-![Super PXE Banner](banner.png)
-
-# <img src="icon.png" width="48" height="48" align="center"/> Super PXE Server
+<img width="3168" height="1344" alt="banner" src="https://github.com/user-attachments/assets/97cd2498-477b-4319-983c-b4bc9d874ec6" />
+# <img width="48" height="48" alt="icon" align="center" src="https://github.com/user-attachments/assets/401ae5dd-e354-4513-a1a3-9a03003de33d" /> Super PXE Server
 
 **\*\*The Ultimate Open-Source Network Boot Solution\*\***
 
@@ -8,7 +7,8 @@
 **Version: v1.37**
 
 ## Overview
-![Super PXE Interface](release_v1/SPS-image.png)
+<img width="2816" height="1536" alt="SPS-image" src="https://github.com/user-attachments/assets/15a8681f-54a9-475a-87b2-d9e375d42cdb" />
+
 
 Super PXE Server is an advanced, automated network boot appliance designed to unify the best features of tools like **\*\*iVentoy\*\***, **\*\*Netboot.xyz\*\***, and **\*\*Enterprise Diskless Solutions\*\***.
 

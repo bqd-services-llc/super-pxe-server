@@ -1,0 +1,18 @@
+services:
+  super-pxe:
+    container_name: super-pxe
+    build: .
+    image: ghcr.io/bqdservices/super-pxe-server:latest
+    restart: unless-stopped
+    
+    # CRITICAL: Allows the container to see DHCP broadcasts
+    network_mode: "host"
+    
+    # CRITICAL: Allows 'mount -o loop' for ISOs
+    privileged: true
+    
+    volumes:
+      # Map your local storage folder to the container
+      - ./storage:/opt/super-pxe-server/storage
+      # Optional: Persist generated configs/logs
+      - ./logs:/var/log

@@ -71,8 +71,7 @@ This is the cleanest installation method. It handles all dependencies (Nginx, Py
 
 1.  **Download the latest package:**
     ```bash
-    wget [https://github.com/YourRepo/releases/download/v1.37/super-pxe-server_1.37_amd64.deb](https://github.com/YourRepo/releases/download/v1.37/super-pxe-server_1.37_amd64.deb)
-    ```
+    wget https://github.com/bqd-services-llc/super-pxe-server/releases/tag/v1.37```
 
 2.  **Install via apt:**
     ```bash

@@ -98,7 +98,7 @@ wget https://github.com/bqd-services-llc/super-pxe-server/releases/download/v2.0
 **How to Install:**
 ```bash
 # 1. Download the installer
-wget https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh
+wget [https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh](https://github.com/bqd-services-llc/super-pxe-server/blob/main/install_super_pxe.sh)
 
 # 2. Make executable
 chmod +x install_super_pxe.sh

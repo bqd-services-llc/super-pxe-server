@@ -1,6 +1,7 @@
 # Super PXE Server
 
-![Super PXE Server](https://shields.io/badge/Super_PXE-Server-1E3A8A?style=for-the-badge&logo=server) 
+ <img width="3168" height="1344" alt="banner" src="https://github.com/user-attachments/assets/d867580f-8a88-4792-aa7c-afdefa786b30" />
+
 **Drop. Boot. Done.**
 
 **Copyright © 2026 BQD Services LLC. All Rights Reserved.**
@@ -22,6 +23,10 @@ It provides a "Drop-and-Boot" experience: simply place an ISO, VHD, or Disk Imag
 * **Visual Dashboard:** Manage your server from any browser.
 * **Asset Detection:** Automatically scans and lists detected ISOs and VHDs.
 * **Safe Configuration:** "Advanced Mode" prevents accidental network misconfigurations (DHCP/IP settings).
+
+
+https://github.com/user-attachments/assets/2b0a6516-1098-4a1b-8604-cc5692299a34
+
 
 ### 2. Zero-Config Booting
 * **ISOs:** Drop Linux or Windows installers into `/storage/isos`.
@@ -75,7 +80,7 @@ This is the cleanest installation method. It handles all dependencies (Nginx, Py
     ```
 
 3.  **Access the Dashboard:**
-    Open your browser and navigate to: `http://<your-server-ip>`
+    Open your browser and navigate to: `http://<your-server-ip>:8000`
 
 ### Method 2: Docker Container
 Ideal for testing or containerized labs.

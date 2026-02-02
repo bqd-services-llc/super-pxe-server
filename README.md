@@ -5,7 +5,7 @@
 **The Ultimate Network Boot Solution**
 
 **Copyright © 2026 BQD Services. All Rights Reserved.**
-**Version: v2.0 (Next-Gen)**
+**Version: v2.0.2 (Next-Gen)**
 
 ## Overview
 
@@ -96,7 +96,7 @@ The provided `install_super_pxe.sh` is a comprehensive, single-file installer.
 **How to Install:**
 ```bash
 # 1. Download the installer
-wget https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh
+wget https://raw.githubusercontent.com/bqd-services-llc/super-pxe-server/main/install_super_pxe.sh
 
 # 2. Make executable
 chmod +x install_super_pxe.sh

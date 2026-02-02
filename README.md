@@ -88,8 +88,6 @@ A modern, "Shield of Speed" themed Admin Console allows you to manage the entire
 ## Installation
 
 The provided `install_super_pxe.sh` is a comprehensive, single-file installer.
-Or the deb package
-wget https://github.com/bqd-services-llc/super-pxe-server/releases/download/v2.0.0/super-pxe-server_2.0.0_amd64.deb
 
 **Prerequisites:**
 *   **OS:** Ubuntu 22.04 LTS or 24.04 LTS (Fresh Install Recommended).
@@ -98,7 +96,7 @@ wget https://github.com/bqd-services-llc/super-pxe-server/releases/download/v2.0
 **How to Install:**
 ```bash
 # 1. Download the installer
-wget https://github.com/bqd-services-llc/super-pxe-server/blob/main/install_super_pxe.sh
+wget https://raw.githubusercontent.com/YourRepo/super-pxe/main/install_super_pxe.sh
 
 # 2. Make executable
 chmod +x install_super_pxe.sh

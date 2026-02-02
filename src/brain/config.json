@@ -1,0 +1,7 @@
+{
+    "server_ip": "192.168.1.100",
+    "dhcp_next_server": "192.168.1.100",
+    "iscsi_allowed_initiators": "ALL",
+    "boot_timeout": 10,
+    "menu_title": "Super PXE Server Beta"
+}

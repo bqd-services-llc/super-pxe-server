@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super PXE | Enterprise Dashboard</title>
+    <!-- Google Fonts: Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sps-blue: #1E3A8A;
+            --sps-silver: #94A3B8;
+            --sps-white: #FFFFFF;
+            --sps-bolt: #F59E0B;
+            --bg: #F8FAFC;
+            --text-dark: #1E293B;
+        }
+        body { background-color: var(--bg); font-family: 'Montserrat', sans-serif; color: var(--text-dark); overflow-x: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; background: var(--sps-blue); color: var(--sps-white); transition: all 0.3s; z-index: 1000; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.7); padding: 12px 20px; border-radius: 0; border-left: 4px solid transparent; font-weight: 600; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.1); color: var(--sps-white); border-left-color: var(--sps-bolt); }
+        .sidebar .brand { padding: 25px 20px; font-weight: 700; font-size: 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.1); letter-spacing: 1px; }
+
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-width); padding: 30px; transition: all 0.3s; }
+
+        /* Cards */
+        .card { border: 1px solid var(--sps-silver); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card-header { background-color: var(--sps-white); border-bottom: 1px solid var(--sps-silver); font-weight: 700; color: var(--sps-blue); }
+
+        .stat-card { background: white; border: 1px solid var(--sps-silver); border-radius: 8px; padding: 20px; display: flex; align-items: center; gap: 15px; }
+        .stat-card .icon-box { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: rgba(30, 58, 138, 0.1); color: var(--sps-blue); }
+
+        .btn-primary { background-color: var(--sps-bolt); border-color: var(--sps-bolt); color: var(--sps-blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-primary:hover { background-color: #D97706; border-color: #D97706; color: var(--sps-blue); }
+
+        .btn-outline-primary { border-color: var(--sps-blue); color: var(--sps-blue); }
+        .btn-outline-primary:hover { background-color: var(--sps-blue); color: var(--sps-white); }
+
+        /* Search Bar */
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 15px; top: 12px; color: var(--sps-silver); }
+        .search-box input { padding-left: 45px; border-radius: 6px; border: 1px solid var(--sps-silver); }
+        .search-box input:focus { border-color: var(--sps-blue); box-shadow: 0 0 0 0.25rem rgba(30, 58, 138, 0.1); }
+
+        .status-online { color: #10B981; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; align-items: center; justify-content: center; z-index: 2000; }
+
+        h2, h3, h5 { font-weight: 700; color: var(--sps-blue); }
+        .text-primary { color: var(--sps-blue) !important; }
+
+        .dir-item { cursor: pointer; background-color: #f1f5f9; }
+        .dir-item:hover { background-color: #e2e8f0; }
+        .breadcrumb-item a { text-decoration: none; color: var(--sps-blue); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="loading-overlay" id="global-loader">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand d-flex align-items-center gap-2">
+            <img src="/static/icon.png" width="32" height="32" alt="Logo">
+            <span>SUPER PXE</span>
+        </div>
+        <nav class="nav flex-column mt-3">
+            <a class="nav-link active" id="nav-dash" href="#" onclick="showPage('dash')"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a class="nav-link" id="nav-storage" href="#" onclick="showPage('storage')"><i class="bi bi-hdd-network me-2"></i> Storage & Assets</a>
+            <a class="nav-link" id="nav-clients" href="#" onclick="showPage('clients')"><i class="bi bi-laptop me-2"></i> Clients & Automation</a>
+            <a class="nav-link" id="nav-settings" href="#" onclick="showPage('settings')"><i class="bi bi-gear me-2"></i> System Settings</a>
+        </nav>
+        
+        <!-- License Status -->
+        <div class="mx-3 mt-4 p-3 rounded bg-dark bg-opacity-25 small" id="license-banner">
+            <div class="text-uppercase fw-bold mb-1" style="font-size: 0.7rem; opacity: 0.8;">License Status</div>
+            <div id="license-type-text">Community Edition</div>
+            <div id="license-detail-text" class="text-muted">Single workstation limit</div>
+        </div>
+
+        <div class="mt-auto p-3 text-muted small border-top border-secondary">
+            Version v2.0 (Next-Gen)<br>&copy; 2026 BQD Services
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Page: Dashboard -->
+        <div id="page-dash">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Dashboard</h2>
+                <div class="badge bg-success-subtle text-success p-2 rounded-pill px-3 border border-success">
+                    <i class="bi bi-check-circle-fill me-1"></i> System Online
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="icon-box bg-primary-subtle text-primary"><i class="bi bi-disc"></i></div>
+                        <div>
+                            <div class="text-muted small">Total ISOs (Root)</div>
+                            <h3 class="fw-bold mb-0" id="stat-isos">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="icon-box bg-info-subtle text-info"><i class="bi bi-file-earmark-binary"></i></div>
+                        <div>
+                            <div class="text-muted small">Total VHDs (Root)</div>
+                            <h3 class="fw-bold mb-0" id="stat-vhds">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="icon-box bg-warning-subtle text-warning"><i class="bi bi-cpu"></i></div>
+                        <div>
+                            <div class="text-muted small">Active Sessions</div>
+                            <h3 class="fw-bold mb-0" id="stat-sessions">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-4">Network Quick Info</h5>
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3 border-end">
+                            <div class="small text-muted">Server IP</div>
+                            <div class="fw-bold" id="info-ip">--</div>
+                        </div>
+                        <div class="col-6 col-md-3 border-end">
+                            <div class="small text-muted">DHCP Option 66</div>
+                            <div class="fw-bold text-primary" id="info-dhcp">--</div>
+                        </div>
+                        <div class="col-6 col-md-3 border-end">
+                            <div class="small text-muted">UEFI Bootfile</div>
+                            <div class="fw-bold">shim.efi</div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="small text-muted">Legacy Bootfile</div>
+                            <div class="fw-bold">undionly.kpxe</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white">Active Connections (Live)</div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Client Address / Initiator</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="session-list">
+                            <tr><td colspan="3" class="text-center text-muted p-4">No active sessions</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Storage -->
+        <div id="page-storage" style="display:none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">Storage & Assets</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb" id="storage-breadcrumb">
+                            <li class="breadcrumb-item"><a href="#" onclick="browse('', 'root')">Root</a></li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="document.getElementById('injection-upload').click()">
+                        <i class="bi bi-upload"></i> Upload Injection
+                    </button>
+                    <input type="file" id="injection-upload" hidden onchange="uploadInjection(this)">
+                    <button class="btn btn-primary" id="refresh-btn" onclick="refreshAssets()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Library
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-box mb-4">
+                <i class="bi bi-search"></i>
+                <input type="text" class="form-control" id="asset-search" placeholder="Search in current view..." onkeyup="filterAssets()">
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                            <span>OS Installers (ISOs)</span>
+                            <span class="badge bg-secondary" id="count-isos">0</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="iso-list" style="max-height: 600px; overflow-y: auto;">
+                                <!-- Items -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                            <span>Disk Images (VHDs)</span>
+                            <span class="badge bg-secondary" id="count-vhds">0</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="vhd-list" style="max-height: 600px; overflow-y: auto;">
+                                <!-- Items -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-warning">
+                        <div class="card-header bg-warning-subtle fw-bold d-flex justify-content-between align-items-center text-warning-emphasis">
+                            <span>Injections (Kickstart/Preseed)</span>
+                            <span class="badge bg-warning text-dark" id="count-injections">0</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="injection-list" style="max-height: 600px; overflow-y: auto;">
+                                <!-- Items -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Clients -->
+        <div id="page-clients" style="display:none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Clients & Automation</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                    <i class="bi bi-plus-lg"></i> Add Client Mapping
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white">MAC-to-Image Mappings (Auto-Boot)</div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>MAC Address</th>
+                                <th>Target Image</th>
+                                <th>Type</th>
+                                <th>Advanced</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-mapping-list">
+                            <!-- Items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Settings -->
+        <div id="page-settings" style="display:none">
+            <h2 class="fw-bold mb-4">System Settings</h2>
+            <div class="card">
+                <div class="card-body">
+                    <form id="config-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Menu Title</label>
+                                <input type="text" class="form-control" id="menu_title" name="menu_title">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Boot Menu Timeout (sec)</label>
+                                <input type="number" class="form-control" id="boot_timeout" name="boot_timeout">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Admin Password</label>
+                                <input type="password" class="form-control" id="admin_password" name="admin_password" placeholder="Leave blank to keep current">
+                            </div>
+                            <hr class="my-4">
+                            <h5 class="fw-bold"><i class="bi bi-shield-lock me-2"></i>Advanced Networking</h5>
+                            <div class="col-md-4">
+                                <label class="form-label">Server IP</label>
+                                <input type="text" class="form-control" id="server_ip" name="server_ip">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">DHCP Next-Server</label>
+                                <input type="text" class="form-control" id="dhcp_next_server" name="dhcp_next_server">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">iSCSI Allowed Initiators</label>
+                                <input type="text" class="form-control" id="iscsi_allowed_initiators" name="iscsi_allowed_initiators">
+                            </div>
+                            <hr class="my-4">
+                            <h5 class="fw-bold text-primary"><i class="bi bi-patch-check me-2"></i>Enterprise Licensing</h5>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Hardware ID</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control font-monospace bg-light" id="hardware_id" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyHWID()"><i class="bi bi-clipboard"></i></button>
+                                </div>
+                                <div class="form-text">Provide this ID to BQD Services for license generation.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Enterprise License Key</label>
+                                <input type="text" class="form-control font-monospace" id="license_key" name="license_key" placeholder="SPS-ENT-XXXX-XXXX">
+                                <div class="form-text" id="license-msg-ui">Not applied.</div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary px-5">Save Configuration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="addClientModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold">Add Client Mapping</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="client-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">MAC Address</label>
+                                <input type="text" class="form-control font-monospace" id="new-client-mac" placeholder="AA:BB:CC:DD:EE:FF" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Hostname (Optional)</label>
+                                <input type="text" class="form-control" id="new-client-hostname" placeholder="e.g. workstation-01">
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Target Image Name</label>
+                                <input type="text" class="form-control font-monospace" id="new-client-image" placeholder="ubuntu.iso or win10.vhd" required>
+                                <div class="form-text">Type exact filename from Storage library.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Image Type</label>
+                                <select class="form-select" id="new-client-type" onchange="toggleClientFields()">
+                                    <option value="iso">ISO (Installer)</option>
+                                    <option value="vhd">VHD (Disk Image)</option>
+                                </select>
+                            </div>
+
+                            <!-- VHD Specific -->
+                            <div class="col-12" id="field-overlay" style="display:none">
+                                <div class="form-check form-switch p-3 border rounded bg-light">
+                                    <input class="form-check-input" type="checkbox" id="new-client-overlay">
+                                    <label class="form-check-label fw-bold" for="new-client-overlay">Enable Persistent Overlay (Copy-On-Write)</label>
+                                    <div class="small text-muted mt-1">
+                                        Creates a private QCOW2 difference disk for this client. 
+                                        Changes will be saved to the overlay, keeping the Master VHD pristine.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ISO Specific -->
+                            <div class="col-md-6" id="field-injection">
+                                <label class="form-label fw-bold">Injection File (Kickstart/Preseed)</label>
+                                <select class="form-select" id="new-client-injection">
+                                    <option value="">(None)</option>
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="field-kernel">
+                                <label class="form-label fw-bold">Kernel Arguments</label>
+                                <input type="text" class="form-control font-monospace" id="new-client-kernel" placeholder="quiet splash">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top text-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">Add Mapping</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPath = "";
+        let currentType = "root";
+        let allAssets = { isos: [], iso_dirs: [], vhds: [], vhd_dirs: [], injections: [] };
+        let currentConfig = {};
+
+        function showPage(page) {
+            ['dash', 'storage', 'clients', 'settings'].forEach(p => {
+                const el = document.getElementById('page-' + p);
+                if (el) el.style.display = (p === page) ? 'block' : 'none';
+                const nav = document.getElementById('nav-' + p);
+                if (nav) nav.classList.toggle('active', p === page);
+            });
+        }
+        
+        function toggleClientFields() {
+            const type = document.getElementById('new-client-type').value;
+            const isVhd = type === 'vhd';
+            document.getElementById('field-overlay').style.display = isVhd ? 'block' : 'none';
+            document.getElementById('field-injection').style.display = !isVhd ? 'block' : 'none';
+            document.getElementById('field-kernel').style.display = !isVhd ? 'block' : 'none';
+        }
+
+        async function loadData() {
+            try {
+                const config = await fetch('/api/config').then(r => r.json());
+                currentConfig = config;
+                
+                document.getElementById('info-ip').innerText = config.server_ip;
+                document.getElementById('info-dhcp').innerText = config.dhcp_next_server;
+                document.getElementById('hardware_id').value = config.hardware_id;
+
+                for (const [key, value] of Object.entries(config)) {
+                    const el = document.getElementById(key);
+                    if (el && key !== 'admin_password') el.value = value;
+                }
+
+                // Update License UI
+                const ls = config.license_status;
+                const banner = document.getElementById('license-banner');
+                const typeText = document.getElementById('license-type-text');
+                const detailText = document.getElementById('license-detail-text');
+                const msgUI = document.getElementById('license-msg-ui');
+
+                typeText.innerText = ls.type === 'ENTERPRISE' ? 'Enterprise Edition' : 'Community Edition';
+                detailText.innerText = ls.message;
+                msgUI.innerText = ls.message;
+                
+                if (ls.type === 'ENTERPRISE') {
+                    banner.classList.remove('bg-dark');
+                    banner.classList.add('bg-success');
+                    typeText.classList.add('fw-bold');
+                } else if (ls.type === 'TRIAL') {
+                    banner.classList.remove('bg-dark');
+                    banner.classList.add('bg-primary');
+                } else {
+                    banner.classList.add('bg-dark');
+                }
+
+                await browse("", "root");
+                await loadSessions();
+                renderClients();
+            } catch (err) {
+                console.error('Failed to load data:', err);
+            }
+        }
+
+        function copyHWID() {
+            const el = document.getElementById('hardware_id');
+            el.select();
+            document.execCommand('copy');
+            alert('Hardware ID copied to clipboard!');
+        }
+
+        async function loadSessions() {
+            try {
+                const sessions = await fetch('/api/sessions').then(r => r.json());
+                document.getElementById('stat-sessions').innerText = sessions.length;
+                const list = document.getElementById('session-list');
+                if (sessions.length) {
+                    list.innerHTML = sessions.map(s => `
+                        <tr>
+                            <td><span class="badge bg-info">${s.type.toUpperCase()}</span></td>
+                            <td><code>${s.client}</code></td>
+                            <td><span class="text-success">Connected</span></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<tr><td colspan="3" class="text-center text-muted p-4">No active sessions</td></tr>';
+                }
+            } catch (e) {}
+        }
+
+        async function browse(path, type) {
+            currentPath = path;
+            currentType = type;
+            try {
+                const assets = await fetch(`/api/assets?path=${encodeURIComponent(path)}&type=${type}`).then(r => r.json());
+                allAssets = assets;
+                const bc = document.getElementById('storage-breadcrumb');
+                bc.innerHTML = '<li class="breadcrumb-item"><a href="#" onclick="browse(\'\', \'root\')">Root</a></li>';
+                if (path) {
+                    const parts = path.split('/');
+                    let accumulated = "";
+                    parts.forEach((p, i) => {
+                        accumulated += (i === 0 ? p : "/" + p);
+                        if (i === parts.length - 1) bc.innerHTML += `<li class="breadcrumb-item active">${p}</li>`;
+                        else bc.innerHTML += `<li class="breadcrumb-item"><a href="#" onclick="browse('${accumulated}', '${type}')">${p}</a></li>`;
+                    });
+                }
+                if (!path && type === "root") {
+                    document.getElementById('stat-isos').innerText = assets.isos.length;
+                    document.getElementById('stat-vhds').innerText = assets.vhds.length;
+                    document.getElementById('count-injections').innerText = assets.injections ? assets.injections.length : 0;
+                }
+                renderAssets(assets);
+                populateInjectionSelect(assets.injections);
+            } catch (err) {}
+        }
+        
+        function populateInjectionSelect(injections) {
+            const sel = document.getElementById('new-client-injection');
+            if (!injections) return;
+            const current = sel.value;
+            sel.innerHTML = '<option value="">(None)</option>' + 
+                injections.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+            if (current) sel.value = current;
+        }
+
+        async function uploadInjection(input) {
+            if (!input.files[0]) return;
+            const formData = new FormData();
+            formData.append("file", input.files[0]);
+            
+            try {
+                const res = await fetch('/api/upload_injection', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+                
+                if (res.status === 'success') {
+                    alert('Injection file uploaded successfully!');
+                    refreshAssets();
+                } else {
+                    alert('Upload failed: ' + res.message);
+                }
+            } catch(e) { alert('Error uploading file'); }
+            input.value = ''; // Reset
+        }
+
+        function renderAssets(assets) {
+            const isoList = document.getElementById('iso-list');
+            const vhdList = document.getElementById('vhd-list');
+            const injList = document.getElementById('injection-list');
+
+            let isoHtml = "";
+            if (assets.iso_dirs) isoHtml += assets.iso_dirs.map(d => `
+                <div class="list-group-item dir-item" onclick="browse('${d.path}', 'iso')">
+                    <div class="d-flex align-items-center gap-3"><i class="bi bi-folder-fill text-warning fs-4"></i><div class="fw-bold">${d.name}</div></div>
+                </div>`).join('');
+            if (assets.isos) isoHtml += assets.isos.map(f => `
+                <div class="list-group-item">
+                    <div class="d-flex align-items-center gap-3"><i class="bi bi-file-earmark-code text-primary fs-4"></i><div class="text-truncate"><div class="fw-bold text-truncate">${f.name}</div><div class="text-muted small">/storage/isos/${f.path}</div></div></div>
+                </div>`).join('');
+            isoList.innerHTML = isoHtml || '<div class="p-4 text-center text-muted">Empty</div>';
+            document.getElementById('count-isos').innerText = (assets.isos ? assets.isos.length : 0) + (assets.iso_dirs ? assets.iso_dirs.length : 0);
+
+            let vhdHtml = "";
+            if (assets.vhd_dirs) vhdHtml += assets.vhd_dirs.map(d => `
+                <div class="list-group-item dir-item" onclick="browse('${d.path}', 'vhd')">
+                    <div class="d-flex align-items-center gap-3"><i class="bi bi-folder-fill text-warning fs-4"></i><div class="fw-bold">${d.name}</div></div>
+                </div>`).join('');
+            if (assets.vhds) vhdHtml += assets.vhds.map(f => `
+                <div class="list-group-item">
+                    <div class="d-flex align-items-center gap-3"><i class="bi bi-hdd-fill text-info fs-4"></i><div class="text-truncate"><div class="fw-bold text-truncate">${f.name}</div><div class="text-muted small">${f.path}</div></div></div>
+                </div>`).join('');
+            vhdList.innerHTML = vhdHtml || '<div class="p-4 text-center text-muted">Empty</div>';
+            document.getElementById('count-vhds').innerText = (assets.vhds ? assets.vhds.length : 0) + (assets.vhd_dirs ? assets.vhd_dirs.length : 0);
+            
+            let injHtml = "";
+            if (assets.injections) injHtml += assets.injections.map(f => `
+                <div class="list-group-item">
+                    <div class="d-flex align-items-center gap-3"><i class="bi bi-file-text text-warning fs-4"></i><div class="text-truncate"><div class="fw-bold text-truncate">${f.name}</div></div></div>
+                </div>`).join('');
+            if (injList) injList.innerHTML = injHtml || '<div class="p-4 text-center text-muted">Empty</div>';
+        }
+
+        function renderClients() {
+            const list = document.getElementById('client-mapping-list');
+            const clients = currentConfig.clients || [];
+            if (clients.length) {
+                list.innerHTML = clients.map((c, i) => `
+                    <tr>
+                        <td>
+                            <div class="fw-bold font-monospace">${c.mac}</div>
+                            ${c.hostname ? `<div class="small text-muted"><i class="bi bi-pc-display me-1"></i>${c.hostname}</div>` : ''}
+                        </td>
+                        <td class="font-monospace">${c.image}</td>
+                        <td><span class="badge bg-secondary">${c.type.toUpperCase()}</span></td>
+                        <td>
+                            ${c.overlay ? '<span class="badge bg-success"><i class="bi bi-layers-fill me-1"></i>Persistent Overlay</span>' : ''}
+                            ${c.injection_file ? '<div class="small text-primary"><i class="bi bi-file-earmark-text me-1"></i>Inj: ' + c.injection_file + '</div>' : ''}
+                            ${c.kernel_args ? '<div class="small text-muted text-truncate" style="max-width: 150px;">' + c.kernel_args + '</div>' : ''}
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteClient(${i})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                list.innerHTML = '<tr><td colspan="5" class="text-center text-muted p-4">No client mappings defined</td></tr>';
+            }
+        }
+
+        async function deleteClient(index) {
+            currentConfig.clients.splice(index, 1);
+            saveCurrentConfig();
+        }
+
+        async function saveCurrentConfig() {
+            const loader = document.getElementById('global-loader');
+            loader.style.display = 'flex';
+            try {
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentConfig)
+                });
+                renderClients();
+            } finally { loader.style.display = 'none'; }
+        }
+
+        document.getElementById('client-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const mac = document.getElementById('new-client-mac').value;
+            const image = document.getElementById('new-client-image').value;
+            const type = document.getElementById('new-client-type').value;
+            
+            const hostname = document.getElementById('new-client-hostname').value;
+            const overlay = document.getElementById('new-client-overlay').checked;
+            const injection = document.getElementById('new-client-injection').value;
+            const kernel = document.getElementById('new-client-kernel').value;
+
+            if (!currentConfig.clients) currentConfig.clients = [];
+            
+            const clientData = { mac, image, type, hostname };
+            if (type === 'vhd') clientData.overlay = overlay;
+            if (type === 'iso') {
+                if (injection) clientData.injection_file = injection;
+                if (kernel) clientData.kernel_args = kernel;
+            }
+            
+            currentConfig.clients.push(clientData);
+            saveCurrentConfig();
+            bootstrap.Modal.getInstance(document.getElementById('addClientModal')).hide();
+            e.target.reset();
+            toggleClientFields(); // Reset field visibility
+        });
+
+        document.getElementById('config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            Object.assign(currentConfig, data);
+            saveCurrentConfig();
+            alert('Settings saved!');
+        });
+
+        function filterAssets() {
+            const term = document.getElementById('asset-search').value.toLowerCase();
+            const filtered = {
+                isos: allAssets.isos.filter(f => f.name.toLowerCase().includes(term)),
+                iso_dirs: allAssets.iso_dirs.filter(d => d.name.toLowerCase().includes(term)),
+                vhds: allAssets.vhds.filter(f => f.name.toLowerCase().includes(term)),
+                vhd_dirs: allAssets.vhd_dirs.filter(d => d.name.toLowerCase().includes(term)),
+                injections: allAssets.injections.filter(f => f.name.toLowerCase().includes(term))
+            };
+            renderAssets(filtered);
+        }
+
+        async function refreshAssets() {
+            document.getElementById('global-loader').style.display = 'flex';
+            try {
+                await fetch('/api/refresh', { method: 'POST' });
+                await loadData();
+            } finally { document.getElementById('global-loader').style.display = 'none'; }
+        }
+
+        loadData();
+        setInterval(loadSessions, 10000);
+    </script>
+</body>
+</html>
